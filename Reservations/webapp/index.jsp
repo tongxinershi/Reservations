@@ -1,0 +1,1 @@
+<% request.getRequestDispatcher("/WEB-INF/views/main.jsp").forward(request, response);%>

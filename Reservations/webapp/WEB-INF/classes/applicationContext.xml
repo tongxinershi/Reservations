@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd
+           http://www.springframework.org/schema/aop
+           http://www.springframework.org/schema/aop/spring-aop.xsd
+           http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd
+           ">
+
+	<context:property-placeholder location="classpath:db.properties" />
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 注入数据源 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 配置mybatis (mapper)映射器路径 -->
+		<property name="mapperLocations" value="classpath:mybatisMapper/*Mapper.xml" />
+		<!-- 配置mybatis 类型别名 -->
+		<!-- <property name="typeAliasesPackage" value="com.kuper.domain" /> -->
+	</bean>
+	<!-- Mapper -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- private String basePackage; Mapper接口的包路径 -->
+		<property name="basePackage" value="com.kuper.mapper" />
+	</bean>
+
+	<!-- 1.事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<!-- 不是注入sqlSessionFactory，而是注入dataSource -->
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 2.aop切入点 -->
+	<aop:config>
+		<aop:advisor advice-ref="adviceId"
+			pointcut="execution(* com.kuper.service.I*Service.*(..))" />
+	</aop:config>
+	<!-- 3.事务通知 -->
+	<tx:advice id="adviceId" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="get*" read-only="true" propagation="SUPPORTS" />
+			<tx:method name="find*" read-only="true" propagation="SUPPORTS" />
+			<tx:method name="*" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 设置注解扫描包路径 -->
+	<context:component-scan base-package="com.kuper" />
+	<!-- 兼容低版本 spring -->
+	<context:annotation-config />
+
+	<import resource="classpath:applicationContext-mvc.xml"/>
+</beans>
